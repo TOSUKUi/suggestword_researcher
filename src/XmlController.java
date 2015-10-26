@@ -50,29 +50,27 @@ class XmlController{
 	for(int i = 0;i < words.length();i++){
 	    
 
-	    URL url = new URL("http://www.google.com/complete/search?hl=ja&output=toolbar&ie=utf-8&or=utf-8&q=" + "\"" +word +'+'+this.words.getWord(i) +"\"");
+	    URL url = new URL("http://www.google.com/complete/search?hl=ja&output=toolbar&ie=utf-8&oe=utf-8&q=" + "\"" +word +'+'+this.words.getWord(i) +"\"");
 	    
 	    // 接続オブジェクト
-	    HttpURLConnection http = null;
+	    HttpURLConnection urlConn = null;
 	    try{
-	    http = (HttpURLConnection)url.openConnection();
-	    // GET メソッド
-	    http.setRequestMethod("GET");
-	    // 接続
-	    http.connect();
-	    }catch(IOException e){
+		urlConn = (HttpURLConnection) url.openConnection();
+		urlConn.setRequestMethod("GET");
+		
+		
+	     }catch(IOException e){
 		e.printStackTrace();
 		System.out.println(e + "がコネクトプロセスで検出された");
-	    }
-
-	    InputStream ism = http.getInputStream();
-	    InputSource is = new InputSource(ism);
-	    is.setEncoding("utf-8");
+	     }
+	    urlConn.connect();
+	   
 	    
 	    
 	    Document doc = null;
+	    System.out.println(urlConn.getInputStream());
 	    try {
-		doc = builder.parse(is.getByteStream());
+		doc = builder.parse(urlConn.getInputStream());
 	    }catch(IOException e){
 		e.printStackTrace();
 		System.out.println(e + "がドキュメント生成プロセスで検出された");
@@ -83,6 +81,7 @@ class XmlController{
 	    Element root = doc.getDocumentElement();
 	    System.out.println("ルート要素名：" + root.getTagName());
 	    NodeList nodeList = root.getElementsByTagName("CompleteSuggestion");
+	    System.out.println("検索ワード="+ word + "+" + this.words.getWord(i) );
 	    for (int j = 0; j < nodeList.getLength(); j++) {
 		Element element = (Element)nodeList.item(j);
 		System.out.println(element.getAttribute("suggestion"));
