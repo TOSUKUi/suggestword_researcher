@@ -84,7 +84,9 @@ class XmlController{
 	    System.out.println("検索ワード="+ word + "+" + this.words.getWord(i) );
 	    for (int j = 0; j < nodeList.getLength(); j++) {
 		Element element = (Element)nodeList.item(j);
-		System.out.println(element.getAttribute("suggestion"));
+		Element childElement = (Element)element.getElementsByTagName("suggestion").item(0);
+		String suggest = childElement.getAttribute("data");
+	
 	    }
 	    
 	    
