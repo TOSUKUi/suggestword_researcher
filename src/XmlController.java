@@ -4,7 +4,7 @@ import java.net.HttpURLConnection;
 import java.net.ProtocolException;
 import java.net.URL;
 import java.net.URLEncoder;
-
+import java.util.LinkedList;
 import java.nio.charset.MalformedInputException;
 import java.net.MalformedURLException;
 import javax.xml.parsers.DocumentBuilder;
@@ -24,7 +24,7 @@ import org.xml.sax.SAXException;
 
 class XmlController{
     
-     
+    LinkedList<String> suggest;
     DocumentBuilderFactory factory;
     DocumentBuilder builder;
     /**
@@ -37,20 +37,40 @@ class XmlController{
 	builder = factory.newDocumentBuilder();
 	factory.setValidating(true);
 	words = new Words();
-
+	suggest = new LinkedList<String>();
     }
 
+    private void makeSuggestionTree(String suggestion) throws SAXException,MalformedURLException,UnsupportedEncodingException,IOException{
+	this.suggest.add(suggestion);
+	if(!suggestion.isEmpty()){
+	    System.out.println("親サジェスト :" + suggestion);
+	    LinkedList<String> childrenSuggests = getSuggest(suggestion);
+	    System.out.println("子サジェスト :" + childrenSuggests.toString());
+
+	    for(int i=0;i < childrenSuggests.size();i++){
+		if(!childrenSuggests.get(i).equals(suggestion))
+		    makeSuggestionTree(childrenSuggests.get(i));	    
+	    }
+	}
+
+	
+    }
+    public LinkedList<String> getSuggestion(String word) throws SAXException,MalformedURLException,UnsupportedEncodingException,IOException{
+	makeSuggestionTree(word);
+	return this.suggest;
+    }
 
     
-    
-    
 
-    public void getSuggest(String word) throws SAXException,MalformedURLException,UnsupportedEncodingException,IOException{
+    private LinkedList<String> getSuggest(String word) throws SAXException,MalformedURLException,UnsupportedEncodingException,IOException{
+	
+	LinkedList<String> suggestions = new LinkedList<String>();
+	
 	
 	for(int i = 0;i < words.length();i++){
 	    
 
-	    URL url = new URL("http://www.google.com/complete/search?hl=ja&output=toolbar&ie=utf-8&oe=utf-8&q=" + "\"" +word +'+'+this.words.getWord(i) +"\"");
+	    URL url = new URL("http://www.google.com/complete/search?hl=ja&output=toolbar&ie=utf-8&oe=utf-8&q="  + word + this.words.getWord(i));
 	    
 	    // 接続オブジェクト
 	    HttpURLConnection urlConn = null;
@@ -68,7 +88,7 @@ class XmlController{
 	    
 	    
 	    Document doc = null;
-	    System.out.println(urlConn.getInputStream());
+
 	    try {
 		doc = builder.parse(urlConn.getInputStream());
 	    }catch(IOException e){
@@ -79,20 +99,20 @@ class XmlController{
 		e.printStackTrace();
 	    }
 	    Element root = doc.getDocumentElement();
-	    System.out.println("ルート要素名：" + root.getTagName());
+
 	    NodeList nodeList = root.getElementsByTagName("CompleteSuggestion");
-	    System.out.println("検索ワード="+ word + "+" + this.words.getWord(i) );
+	    
 	    for (int j = 0; j < nodeList.getLength(); j++) {
 		Element element = (Element)nodeList.item(j);
 		Element childElement = (Element)element.getElementsByTagName("suggestion").item(0);
-		String suggest = childElement.getAttribute("data");
-	
+		suggestions.add(childElement.getAttribute("data").replace(" ","+"));
+		
 	    }
 	    
-	    
-		    
+	  	    
 	}
 	
+	return suggestions;
 	
 
     }
@@ -100,3 +120,4 @@ class XmlController{
     
 
 }
+

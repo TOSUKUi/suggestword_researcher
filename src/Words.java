@@ -5,6 +5,7 @@ class Words{
 
     public Words(){
 	words = new ArrayList<String>();
+	words.add("");
 	words.add("あ");
 	words.add("い");
 	words.add("う");
@@ -109,7 +110,10 @@ class Words{
     }
 
     public String getWord(int index){
-	return words.get(index);
+	if(words.get(index).equals(""))
+	    return words.get(index);
+	else
+	    return "+" + words.get(index);
     }
 
     public int length(){
