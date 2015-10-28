@@ -4,7 +4,8 @@ import java.net.HttpURLConnection;
 import java.net.ProtocolException;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.util.LinkedList;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.nio.charset.MalformedInputException;
 import java.net.MalformedURLException;
 import javax.xml.parsers.DocumentBuilder;
@@ -24,9 +25,12 @@ import org.xml.sax.SAXException;
 
 class XmlController{
     
-    LinkedList<String> suggest;
+    HashSet<String> suggest;
     DocumentBuilderFactory factory;
     DocumentBuilder builder;
+    int numQuery;
+    int flag;
+    int stepToEnd;
     /**
      *五十音及びアルファベットなどサジェストの接尾語
      */
@@ -37,34 +41,40 @@ class XmlController{
 	builder = factory.newDocumentBuilder();
 	factory.setValidating(true);
 	words = new Words();
-	suggest = new LinkedList<String>();
+	suggest = new HashSet<String>();
+	flag = 0;
+	stepToEnd=0;
     }
 
     private void makeSuggestionTree(String suggestion) throws SAXException,MalformedURLException,UnsupportedEncodingException,IOException{
 	this.suggest.add(suggestion);
-	if(!suggestion.isEmpty()){
-	    System.out.println("親サジェスト :" + suggestion);
-	    LinkedList<String> childrenSuggests = getSuggest(suggestion);
-	    System.out.println("子サジェスト :" + childrenSuggests.toString());
-
-	    for(int i=0;i < childrenSuggests.size();i++){
-		if(!childrenSuggests.get(i).equals(suggestion))
-		    makeSuggestionTree(childrenSuggests.get(i));	    
-	    }
+	
+	System.out.println("親サジェスト :" + suggestion);
+	
+	HashSet<String> childrenSuggests = getSuggest(suggestion);
+	System.out.println("子サジェスト :" + childrenSuggests.toString());
+	Iterator<String> it = childrenSuggests.iterator();
+	while(it.hasNext()){
+	    String child = new String(it.next());
+	    if(!this.suggest.contains(child))		
+		makeSuggestionTree(child);	    
 	}
-
 	
     }
-    public LinkedList<String> getSuggestion(String word) throws SAXException,MalformedURLException,UnsupportedEncodingException,IOException{
+    
+	
+    
+    public HashSet<String> getSuggestion(String word) throws SAXException,MalformedURLException,UnsupportedEncodingException,IOException{
+	
 	makeSuggestionTree(word);
 	return this.suggest;
     }
 
-    
 
-    private LinkedList<String> getSuggest(String word) throws SAXException,MalformedURLException,UnsupportedEncodingException,IOException{
+
+    private HashSet<String> getSuggest(String word) throws SAXException,MalformedURLException,UnsupportedEncodingException,IOException{
 	
-	LinkedList<String> suggestions = new LinkedList<String>();
+	HashSet<String> suggestions = new HashSet<String>();
 	
 	
 	for(int i = 0;i < words.length();i++){
@@ -108,16 +118,19 @@ class XmlController{
 		suggestions.add(childElement.getAttribute("data").replace(" ","+"));
 		
 	    }
+	    if(i == 0)
+		if(suggestions.size() < 6)
+		    return suggestions;
 	    
 	  	    
 	}
 	
 	return suggestions;
 	
-
+	
     }
 
-    
+
 
 }
 

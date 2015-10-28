@@ -9,7 +9,7 @@ import java.util.LinkedList;
 import java.util.HashSet;
 class Main{
     
-    public static LinkedList<String> suggest;
+
     public static HashSet<String> unique;
 
     public static void main(String[] args) throws SAXException,MalformedURLException,UnsupportedEncodingException,IOException{
@@ -21,14 +21,17 @@ class Main{
 	try{ 
 	    
 	    XmlController xc = new XmlController();
-	    suggest = xc.getSuggestion(args[0]);
+	    unique = xc.getSuggestion(args[0]);
 
 	}catch(ParserConfigurationException e){
 	    System.out.println("xmlmiss" + e);
 	}
-	unique = new HashSet<String>(suggest);
+
+	int numSuggest = unique.size();
 	String result = unique.toString().replace(",","\n").replace("[","").replace("]","");
 	System.out.println(result);
+	
+	System.out.println("合計サジェスト数="+numSuggest);
 	String file_name = args[1];
 	fileWriter(result,file_name);
 	
@@ -39,7 +42,8 @@ class Main{
     public static  void fileWriter(String collection,String file_name) throws IOException{
 	File file = new File(file_name);
 	PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(file)));
-	pw.println(collection);	
+	pw.println(collection);
+	pw.close();
     }
 
     
