@@ -1,5 +1,7 @@
 import java.io.*;
-
+import java.lang.Thread;
+import java.lang.Process;
+      
 import java.net.HttpURLConnection;
 import java.net.ProtocolException;
 import java.net.URL;
@@ -41,32 +43,44 @@ class XmlController{
 	builder = factory.newDocumentBuilder();
 	factory.setValidating(true);
 	words = new Words();
-	suggest = new HashSet<String>();
+	suggest = new HashSet<String>(400);
 	flag = 0;
 	stepToEnd=0;
     }
-
-    private void makeSuggestionTree(String suggestion) throws SAXException,MalformedURLException,UnsupportedEncodingException,IOException{
+    
+    private void makeSuggestionTree(String suggestion,int deeply,Double progress) throws SAXException,MalformedURLException,UnsupportedEncodingException,IOException{
 	this.suggest.add(suggestion);
+	deeply++;
 	
-	System.out.println("親サジェスト :" + suggestion);
+	int i = 0;
+	System.out.print("\r                                                                                                                                   ");
+	System.out.print("\r"+"進捗="+progress+"%"+ "深さ = "+ deeply+"親サジェスト :" + suggestion);
 	
-	HashSet<String> childrenSuggests = getSuggest(suggestion);
-	System.out.println("子サジェスト :" + childrenSuggests.toString());
+
+	HashSet<String> childrenSuggests = new HashSet<String>(getSuggest(suggestion));
+	
+	if(childrenSuggests.isEmpty())
+	    return;
+	
+	
 	Iterator<String> it = childrenSuggests.iterator();
 	while(it.hasNext()){
+	    i++;
+	    if(deeply == 1)
+		progress = Double.valueOf(i)/Double.valueOf(childrenSuggests.size()) * 100;
 	    String child = new String(it.next());
 	    if(!this.suggest.contains(child))		
-		makeSuggestionTree(child);	    
-	}
+		makeSuggestionTree(child,deeply,progress);	    
+	    }
 	
     }
     
 	
     
     public HashSet<String> getSuggestion(String word) throws SAXException,MalformedURLException,UnsupportedEncodingException,IOException{
-	
-	makeSuggestionTree(word);
+	int deeply = 0;
+	Double progress = 0.0;
+	makeSuggestionTree(word,deeply,progress);
 	return this.suggest;
     }
 
@@ -102,24 +116,63 @@ class XmlController{
 	    try {
 		doc = builder.parse(urlConn.getInputStream());
 	    }catch(IOException e){
-		e.printStackTrace();
-		System.out.println(e + "がドキュメント生成プロセスで検出された");
+		//e.printStackTrace();
+		
+		Process runtimeProcess;
+		int processCompleted = -1;
+		try {
+		    runtimeProcess = Runtime.getRuntime().exec(new String[]{"networksetup","-disconnectpppoeservice","SRASVPN (L2TP) 2"});
+		    processCompleted = runtimeProcess.waitFor();
+		    BufferedReader br = new BufferedReader(new InputStreamReader(runtimeProcess.getErrorStream()));
+		    String line;
+		    while ((line = br.readLine()) != null) {
+			System.out.print(line);
+		    }
+		} catch (IOException e1) {
+		    e1.printStackTrace();
+		} catch (InterruptedException e1) {
+		    e1.printStackTrace();
+		}
+		processCompleted = -1;
+		try {
+		    runtimeProcess = Runtime.getRuntime().exec(new String[]{"networksetup","-connectpppoeservice","SRASVPN (L2TP) 2"});
+		    System.out.print("\r"+"networksetup -connectpppoeservice \"SRASVPN (L2TP) 2\"");
+		    processCompleted = runtimeProcess.waitFor();
+		    BufferedReader br = new BufferedReader(new InputStreamReader(runtimeProcess.getErrorStream()));
+		    String line;
+		    while ((line = br.readLine()) != null) {
+			System.out.print(line);
+		    }
+		    Thread.sleep(3000);
+		} catch (IOException e1) {
+		    e1.printStackTrace();
+		} catch (InterruptedException e1) {
+		    e1.printStackTrace();
+		}
+		
+
+		
+
+		return getSuggest(word);
 	    } catch (SAXException e) {
 		// TODO 自動生成された catch ブロック
-		e.printStackTrace();
+		e.printStackTrace();		
 	    }
+	
+	    
 	    Element root = doc.getDocumentElement();
-
+	    
 	    NodeList nodeList = root.getElementsByTagName("CompleteSuggestion");
 	    
 	    for (int j = 0; j < nodeList.getLength(); j++) {
+
 		Element element = (Element)nodeList.item(j);
 		Element childElement = (Element)element.getElementsByTagName("suggestion").item(0);
 		suggestions.add(childElement.getAttribute("data").replace(" ","+"));
 		
 	    }
 	    if(i == 0)
-		if(suggestions.size() < 6)
+		if(suggestions.size() < 9)
 		    return suggestions;
 	    
 	  	    
@@ -130,7 +183,18 @@ class XmlController{
 	
     }
 
+    String input() throws IOException{
+	BufferedReader input =
+	    new BufferedReader (new InputStreamReader (System.in));
+	String str = input.readLine( );
+	return str;
+    }
+    
+	    
+
 
 
 }
+
+
 
